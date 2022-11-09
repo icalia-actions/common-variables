@@ -18,7 +18,13 @@
     "Actions",
     "JavaScript"
   ],
-  "author": "",
+  "author": "Icalia Labs",
+  "contributors": [
+    {
+      "name": "Vov",
+      "url": "https://ical.ink/vov"
+    }
+  ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/icalia-actions/common-variables/issues"

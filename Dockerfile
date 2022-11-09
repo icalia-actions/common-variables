@@ -11,9 +11,7 @@ RUN echo 'APT::Acquire::Retries "3";' > /etc/apt/apt.conf.d/80-retries \
 # Stage II: Testing  ===========================================================
 FROM runtime AS testing
 
-RUN apt-get update \
- && apt-get install -y --no-install-recommends \
-   git
+RUN apt-get update && apt-get install -y --no-install-recommends git
 
 # Receive the developer user's UID and USER:
 ARG DEVELOPER_UID=1000
@@ -24,9 +22,11 @@ RUN id ${DEVELOPER_UID} \
  || useradd -r -m -u ${DEVELOPER_UID} \
     --shell /bin/bash -c "Developer User,,," ${DEVELOPER_USERNAME}
 
-# Ensure the developer user's home directory and /workspaces/common-variables are owned by him/her:
-# (A workaround to a side effect of setting WORKDIR before creating the user)
-RUN mkdir -p /workspaces/common-variables && chown -R ${DEVELOPER_UID}:node /workspaces/common-variables
+# Ensure the developer user's home directory and /workspaces/common-variables 
+# are currectly owned - A workaround to a side effect of setting WORKDIR before
+# creating the user
+RUN mkdir -p /workspaces/common-variables \
+ && chown -R ${DEVELOPER_UID}:node /workspaces/common-variables
 
 # Add the project's executable path to the system PATH:
 ENV PATH=/workspaces/common-variables/bin:$PATH
@@ -39,7 +39,7 @@ USER ${DEVELOPER_UID}
 
 # Copy and install the project dependency lists into the container image:
 COPY --chown=${DEVELOPER_UID} package.json yarn.lock /workspaces/common-variables/
-RUN yarn install
+RUN yarn install --ignore-scripts
 ENV PATH=/workspaces/common-variables/node_modules/.bin:$PATH
 
 # Stage III: Development =======================================================
@@ -70,10 +70,6 @@ RUN apt-get install -y --no-install-recommends \
   # Vim might be used to edit files when inside the container (git, etc):
   vim \
   unzip
-
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-2.1.32.zip" -o "awscliv2.zip" \
- && unzip awscliv2.zip \
- && ./aws/install
 
 # Add the developer user to the sudoers list:
 RUN export USERNAME=$(getent passwd ${DEVELOPER_UID} | cut -d: -f1) \
