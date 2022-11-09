@@ -60,6 +60,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - run: docker image ls
+
       - name: Compare the expected and actual dist/ directories
         env:
           UID: ${{ steps.variables.outputs.runner-uid }}
