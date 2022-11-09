@@ -1,5 +1,5 @@
 # Stage I: Runtime  ============================================================
-FROM node:erbium-buster-slim AS runtime
+FROM node:gallium-buster-slim AS runtime
 
 RUN echo 'APT::Acquire::Retries "3";' > /etc/apt/apt.conf.d/80-retries \
  && apt-get update \
@@ -9,7 +9,7 @@ RUN echo 'APT::Acquire::Retries "3";' > /etc/apt/apt.conf.d/80-retries \
  && rm -rf /var/lib/apt/lists/*
 
 # Stage II: Testing  ===========================================================
-FROM runtime AS testing-base
+FROM runtime AS testing
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
@@ -17,14 +17,14 @@ RUN apt-get update \
 
 # Receive the developer user's UID and USER:
 ARG DEVELOPER_UID=1000
-ARG DEVELOPER_USER=you
+ARG DEVELOPER_USERNAME=you
 
 # Replicate the developer user in the development image:
 RUN id ${DEVELOPER_UID} \
  || useradd -r -m -u ${DEVELOPER_UID} \
-    --shell /bin/bash -c "Developer User,,," ${DEVELOPER_USER}
+    --shell /bin/bash -c "Developer User,,," ${DEVELOPER_USERNAME}
 
-# Ensure the developer user's home directory and APP_PATH are owned by him/her:
+# Ensure the developer user's home directory and /workspaces/common-variables are owned by him/her:
 # (A workaround to a side effect of setting WORKDIR before creating the user)
 RUN mkdir -p /workspaces/common-variables && chown -R ${DEVELOPER_UID}:node /workspaces/common-variables
 
@@ -36,21 +36,6 @@ WORKDIR /workspaces/common-variables
 
 # Switch to the developer user:
 USER ${DEVELOPER_UID}
-
-# Node Dependencies Stage ======================================================
-FROM testing-base AS node-dependencies
-
-ARG DEVELOPER_USER=you
-
-# Copy and install the project dependency lists into the container image:
-COPY --chown=${DEVELOPER_USER} package.json yarn.lock /workspaces/common-variables/
-RUN yarn install
-
-# Testing Stage ================================================================
-FROM testing-base AS testing
-# ARG DEVELOPER_USER=you
-# COPY --chown=${DEVELOPER_USER} --from=node-dependencies /workspaces/common-variables /workspaces/common-variables
-# ENV PATH=/workspaces/common-variables/node_modules/.bin:$PATH
 
 # Stage III: Development =======================================================
 FROM testing AS development
@@ -100,6 +85,3 @@ USER ${DEVELOPER_UID}
 # Create the directories used to save Visual Studio Code extensions inside the
 # dev container:
 RUN mkdir -p ~/.vscode-server/extensions ~/.vscode-server-insiders/extensions
-
-# COPY --chown=${DEVELOPER_UID} --from=node-dependencies /workspaces/common-variables /workspaces/common-variables
-# ENV PATH=/workspaces/common-variables/node_modules/.bin:$PATH
