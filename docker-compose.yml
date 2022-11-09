@@ -49,8 +49,6 @@ services:
       - node_modules:/workspaces/common-variables/node_modules
       - vscode_extensions:/home/${USER:-you}/.vscode-server/extensions
       - vscode_insiders_extensions:/home/${USER:-you}/.vscode-server-insiders/extensions
-    
-    
 
     command: vscode-wait # Éste comando está definido en `bin/dev-entrypoint`
 
