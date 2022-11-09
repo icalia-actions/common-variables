@@ -33,16 +33,11 @@ jobs:
 
       - name: Set additional variables
         id: variables
-        # uses: icalia-actions/common-variables@v0.0.3
-        uses: ./
+        uses: icalia-actions/common-variables@v0.0.3
 
       - name: Set build timestamp
         id: set-build-timestamp
         run: echo "timestamp=$(date +%s)" >> $GITHUB_OUTPUT
-
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2.2.1
 
       - name: Build Test Image
         id: build-test-image
@@ -51,7 +46,6 @@ jobs:
           load: true
           target: testing
           platforms: linux/amd64
-          builder: ${{ steps.buildx.outputs.name }}
           build-args: |
             DEVELOPER_UID=${{ steps.variables.outputs.runner-uid }}
             DEVELOPER_USERNAME=${{ steps.variables.outputs.runner-user }}
@@ -59,8 +53,6 @@ jobs:
             icalia-actions/common-variables:testing-${{ steps.variables.outputs.git-dasherized-branch }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - run: docker image ls
 
       - name: Compare the expected and actual dist/ directories
         env:
