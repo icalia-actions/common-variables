@@ -37,6 +37,11 @@ WORKDIR /workspaces/common-variables
 # Switch to the developer user:
 USER ${DEVELOPER_UID}
 
+# Copy and install the project dependency lists into the container image:
+COPY --chown=${DEVELOPER_UID} package.json yarn.lock /workspaces/common-variables/
+RUN yarn install
+ENV PATH=/workspaces/common-variables/node_modules/.bin:$PATH
+
 # Stage III: Development =======================================================
 FROM testing AS development
 
@@ -66,6 +71,10 @@ RUN apt-get install -y --no-install-recommends \
   vim \
   unzip
 
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-2.1.32.zip" -o "awscliv2.zip" \
+ && unzip awscliv2.zip \
+ && ./aws/install
+
 # Add the developer user to the sudoers list:
 RUN export USERNAME=$(getent passwd ${DEVELOPER_UID} | cut -d: -f1) \
  && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" \
@@ -85,3 +94,18 @@ USER ${DEVELOPER_UID}
 # Create the directories used to save Visual Studio Code extensions inside the
 # dev container:
 RUN mkdir -p ~/.vscode-server/extensions ~/.vscode-server-insiders/extensions
+
+# Stage IV: Builder ============================================================
+FROM testing AS builder
+
+ARG DEVELOPER_UID=1000
+
+COPY --chown=${DEVELOPER_UID} . /workspaces/common-variables/
+RUN yarn build
+
+RUN rm -rf .env .npmignore __test__ action.yml bin ci-compose.yml coverage src tsconfig.json yarn.lock tmp
+
+# Stage V: Release =============================================================
+FROM runtime AS release
+COPY --from=builder --chown=node:node /workspaces/common-variables /workspaces/common-variables
+WORKDIR /workspaces/common-variables

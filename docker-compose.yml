@@ -17,7 +17,7 @@ services:
     entrypoint: /workspaces/common-variables/bin/dev-entrypoint
     volumes:
       - .:/workspaces/common-variables
-      # - node_modules:/workspaces/common-variables/node_modules
+      - node_modules:/workspaces/common-variables/node_modules
       - vscode_extensions:/home/${USER:-you}/.vscode-server/extensions
       - vscode_insiders_extensions:/home/${USER:-you}/.vscode-server-insiders/extensions
     
