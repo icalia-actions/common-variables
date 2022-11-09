@@ -40,6 +40,10 @@ jobs:
         id: set-build-timestamp
         run: echo "timestamp=$(date +%s)" >> $GITHUB_OUTPUT
 
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2.2.1
+
       - name: Build Test Image
         id: build-test-image
         uses: docker/build-push-action@v3.2.0
@@ -47,6 +51,7 @@ jobs:
           load: true
           target: testing
           platforms: linux/amd64
+          builder: ${{ steps.buildx.outputs.name }}
           build-args: |
             DEVELOPER_UID=${{ steps.variables.outputs.runner-uid }}
             DEVELOPER_USERNAME=${{ steps.variables.outputs.runner-user }}
